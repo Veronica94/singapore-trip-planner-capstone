@@ -11,13 +11,21 @@ API_TIMEOUT_SECONDS = int(os.getenv("API_TIMEOUT_SECONDS", "300"))
 
 
 def post_chat(session_id: str, user_message: str) -> dict:
-    response = requests.post(
-        f"{API_BASE_URL}/chat",
-        json={"session_id": session_id, "user_message": user_message},
-        timeout=API_TIMEOUT_SECONDS,
-    )
-    response.raise_for_status()
-    return response.json()
+    try:
+        response = requests.post(
+            f"{API_BASE_URL}/chat",
+            json={"session_id": session_id, "user_message": user_message},
+            timeout=API_TIMEOUT_SECONDS,
+        )
+        response.raise_for_status()
+        return response.json()
+    except requests.RequestException as e:
+        # Return a user-friendly error message
+        return {
+            "assistant_message": f"⚠️ Cannot connect to backend API. Please check:\n1. Backend is deployed and running\n2. API_BASE_URL is configured correctly in secrets\n\nError: {str(e)}",
+            "artifacts": {},
+            "tool_outputs": {}
+        }
 
 
 def post_postcard(
@@ -28,31 +36,37 @@ def post_postcard(
     color_palette: str | None,
     extra_notes: str | None,
 ) -> dict:
-    response = requests.post(
-        f"{API_BASE_URL}/postcard",
-        json={
-            "session_id": session_id,
-            "prompt_override": prompt_override,
-            "style": style,
-            "mood": mood,
-            "color_palette": color_palette,
-            "extra_notes": extra_notes,
-        },
-        timeout=API_TIMEOUT_SECONDS,
-    )
-    response.raise_for_status()
-    return response.json()
+    try:
+        response = requests.post(
+            f"{API_BASE_URL}/postcard",
+            json={
+                "session_id": session_id,
+                "prompt_override": prompt_override,
+                "style": style,
+                "mood": mood,
+                "color_palette": color_palette,
+                "extra_notes": extra_notes,
+            },
+            timeout=API_TIMEOUT_SECONDS,
+        )
+        response.raise_for_status()
+        return response.json()
+    except requests.RequestException:
+        raise  # Re-raise to be caught by the caller
 
 
 def get_debug_session(session_id: str) -> dict:
-    response = requests.get(
-        f"{API_BASE_URL}/debug/session/{session_id}",
-        timeout=10,
-    )
-    if response.status_code == 404:
-        return {}
-    response.raise_for_status()
-    return response.json()
+    try:
+        response = requests.get(
+            f"{API_BASE_URL}/debug/session/{session_id}",
+            timeout=10,
+        )
+        if response.status_code == 404:
+            return {}
+        response.raise_for_status()
+        return response.json()
+    except requests.RequestException:
+        return {"error": "Could not connect to backend API"}
 
 
 st.set_page_config(page_title="Singapore Trip Planner", layout="wide")

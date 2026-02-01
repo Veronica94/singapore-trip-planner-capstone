@@ -91,7 +91,8 @@ def generate_postcard(
     if not api_key:
         return None, None
 
-    model = os.getenv("OPENAI_IMAGE_MODEL", "gpt-image-1")
+    # Use DALL-E 3 for high-quality image generation
+    model = os.getenv("OPENAI_IMAGE_MODEL", "dall-e-3")
     client = OpenAI(api_key=api_key)
 
     variant = _select_variant()
@@ -111,9 +112,10 @@ def generate_postcard(
 
     try:
         response = client.images.generate(
-            model=model,
+            model=model,  # dall-e-3
             prompt=prompt,
             size="1024x1024",
+            quality="standard",  # Can be "standard" or "hd"
         )
         if not response.data:
             return prompt, None
