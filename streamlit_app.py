@@ -50,8 +50,15 @@ def post_postcard(
             timeout=API_TIMEOUT_SECONDS,
         )
         response.raise_for_status()
-        return response.json()
-    except requests.RequestException:
+        result = response.json()
+        
+        # Log for debugging
+        if not result.get("image_url"):
+            print(f"Warning: Postcard API returned no image_url. Response: {result}")
+        
+        return result
+    except requests.RequestException as e:
+        print(f"Postcard API error: {e}")
         raise  # Re-raise to be caught by the caller
 
 
@@ -396,25 +403,26 @@ if itinerary:
             st.session_state.plan_confirmed = False
 
 postcard_url = artifacts.get("postcard_image_url")
-if postcard_url and st.session_state.plan_confirmed:
-    st.markdown("---")
-    st.markdown("#### Your Personalized Postcard")
-    st.image(postcard_url, width=600)
-    
-    col_download, col_regen = st.columns(2)
-    if postcard_url.startswith("data:image"):
-        col_download.download_button(
-            "📥 Download Postcard",
-            data=postcard_url.split(",", 1)[-1],
-            file_name="singapore_postcard.png",
-            mime="image/png",
-            use_container_width=True,
-        )
-    else:
-        col_download.markdown(f"[🔗 Share postcard]({postcard_url})")
-    
-    # Regenerate section
-    with st.expander("✏️ Customize and Regenerate Postcard"):
+if st.session_state.plan_confirmed:
+    if postcard_url:
+        st.markdown("---")
+        st.markdown("#### Your Personalized Postcard")
+        st.image(postcard_url, width=600)
+        
+        col_download, col_regen = st.columns(2)
+        if postcard_url.startswith("data:image"):
+            col_download.download_button(
+                "📥 Download Postcard",
+                data=postcard_url.split(",", 1)[-1],
+                file_name="singapore_postcard.png",
+                mime="image/png",
+                use_container_width=True,
+            )
+        else:
+            col_download.markdown(f"[🔗 Share postcard]({postcard_url})")
+        
+        # Regenerate section
+        with st.expander("✏️ Customize and Regenerate Postcard"):
         st.session_state.postcard_style = st.selectbox(
             "Style",
             ["Illustration", "Vintage poster", "Watercolor", "Minimalist", "Modern"],
@@ -477,6 +485,54 @@ if postcard_url and st.session_state.plan_confirmed:
                     st.rerun()
             except requests.RequestException as exc:
                 st.error(f"Postcard regeneration failed: {exc}")
+    else:
+        # Postcard generation failed
+        st.markdown("---")
+        st.markdown("#### Postcard Generation")
+        st.warning("⚠️ Postcard generation failed. This could be due to:")
+        st.write("""
+        - OpenAI API rate limits
+        - Content policy issues with the prompt
+        - Network timeout
+        - API key configuration
+        
+        Please check the Debug Information section below for details, or try again with different style settings.
+        """)
+        
+        # Allow retry with different settings
+        st.markdown("**Try generating again with different settings:**")
+        st.session_state.postcard_style = st.selectbox(
+            "Style",
+            ["Illustration", "Vintage poster", "Watercolor", "Minimalist", "Modern"],
+            index=0,
+            key="retry_style",
+        )
+        st.session_state.postcard_mood = st.selectbox(
+            "Mood",
+            ["Warm and welcoming", "Energetic", "Calm", "Luxurious", "Playful"],
+            index=0,
+            key="retry_mood",
+        )
+        if st.button("🔄 Retry Postcard Generation", type="primary"):
+            try:
+                with st.spinner("Generating your postcard..."):
+                    result = post_postcard(
+                        session_id=session_id,
+                        prompt_override=None,
+                        style=st.session_state.postcard_style,
+                        mood=st.session_state.postcard_mood,
+                        color_palette=st.session_state.get("postcard_colors", "Pastel tones"),
+                        extra_notes=st.session_state.get("postcard_extra", ""),
+                    )
+                    last = st.session_state.last_response or {}
+                    artifacts = last.get("artifacts") or {}
+                    artifacts["postcard_prompt"] = result.get("prompt")
+                    artifacts["postcard_image_url"] = result.get("image_url")
+                    last["artifacts"] = artifacts
+                    st.session_state.last_response = last
+                    st.rerun()
+            except requests.RequestException as exc:
+                st.error(f"Retry failed: {exc}")
 
 # Debug section - collapsed by default
 with st.expander("🔧 Debug Information"):
