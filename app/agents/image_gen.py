@@ -92,7 +92,13 @@ def generate_postcard(
         return None, None
 
     # Use DALL-E 3 for high-quality image generation
+    # Falls back to dall-e-3 if OPENAI_IMAGE_MODEL not set
     model = os.getenv("OPENAI_IMAGE_MODEL", "dall-e-3")
+    
+    # Ensure we're using a valid DALL-E model
+    if model not in ["dall-e-2", "dall-e-3"]:
+        model = "dall-e-3"
+    
     client = OpenAI(api_key=api_key)
 
     variant = _select_variant()
@@ -111,12 +117,20 @@ def generate_postcard(
         )
 
     try:
-        response = client.images.generate(
-            model=model,  # dall-e-3
-            prompt=prompt,
-            size="1024x1024",
-            quality="standard",  # Can be "standard" or "hd"
-        )
+        # DALL-E 3 specific parameters
+        generate_params = {
+            "model": model,
+            "prompt": prompt,
+            "size": "1024x1024",
+            "n": 1,
+        }
+        
+        # Only add quality param for DALL-E 3
+        if model == "dall-e-3":
+            generate_params["quality"] = "standard"
+        
+        response = client.images.generate(**generate_params)
+        
         if not response.data:
             return prompt, None
         first = response.data[0]
@@ -126,5 +140,9 @@ def generate_postcard(
             data_url = f"data:image/png;base64,{first.b64_json}"
             return prompt, data_url
         return prompt, None
-    except Exception:
+    except Exception as e:
+        # Log the error for debugging
+        print(f"Image generation error: {e}")
+        import traceback
+        traceback.print_exc()
         return prompt, None
