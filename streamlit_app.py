@@ -423,68 +423,68 @@ if st.session_state.plan_confirmed:
         
         # Regenerate section
         with st.expander("✏️ Customize and Regenerate Postcard"):
-        st.session_state.postcard_style = st.selectbox(
-            "Style",
-            ["Illustration", "Vintage poster", "Watercolor", "Minimalist", "Modern"],
-            index=["Illustration", "Vintage poster", "Watercolor", "Minimalist", "Modern"].index(
-                st.session_state.postcard_style
+            st.session_state.postcard_style = st.selectbox(
+                "Style",
+                ["Illustration", "Vintage poster", "Watercolor", "Minimalist", "Modern"],
+                index=["Illustration", "Vintage poster", "Watercolor", "Minimalist", "Modern"].index(
+                    st.session_state.postcard_style
+                )
+                if st.session_state.postcard_style in ["Illustration", "Vintage poster", "Watercolor", "Minimalist", "Modern"]
+                else 0,
+                key="regen_style",
             )
-            if st.session_state.postcard_style in ["Illustration", "Vintage poster", "Watercolor", "Minimalist", "Modern"]
-            else 0,
-            key="regen_style",
-        )
-        st.session_state.postcard_mood = st.selectbox(
-            "Mood",
-            ["Warm and welcoming", "Energetic", "Calm", "Luxurious", "Playful"],
-            index=["Warm and welcoming", "Energetic", "Calm", "Luxurious", "Playful"].index(
-                st.session_state.postcard_mood
+            st.session_state.postcard_mood = st.selectbox(
+                "Mood",
+                ["Warm and welcoming", "Energetic", "Calm", "Luxurious", "Playful"],
+                index=["Warm and welcoming", "Energetic", "Calm", "Luxurious", "Playful"].index(
+                    st.session_state.postcard_mood
+                )
+                if st.session_state.postcard_mood in ["Warm and welcoming", "Energetic", "Calm", "Luxurious", "Playful"]
+                else 0,
+                key="regen_mood",
             )
-            if st.session_state.postcard_mood in ["Warm and welcoming", "Energetic", "Calm", "Luxurious", "Playful"]
-            else 0,
-            key="regen_mood",
-        )
-        st.session_state.postcard_colors = st.text_input(
-            "Color palette",
-            value=st.session_state.postcard_colors,
-            key="regen_colors",
-        )
-        st.session_state.postcard_extra = st.text_area(
-            "Extra notes",
-            value=st.session_state.postcard_extra,
-            key="regen_extra",
-        )
-        composed_prompt = (
-            f"Postcard of Singapore. Style: {st.session_state.postcard_style}. "
-            f"Mood: {st.session_state.postcard_mood}. "
-            f"Colors: {st.session_state.postcard_colors}. "
-            f"Notes: {st.session_state.postcard_extra}".strip()
-        )
-        st.session_state.postcard_prompt_edit = st.text_area(
-            "Edit prompt directly",
-            value=st.session_state.postcard_prompt_edit or composed_prompt,
-            height=100,
-            key="regen_prompt",
-        )
-        if st.button("🎨 Regenerate Postcard"):
-            try:
-                with st.spinner("Generating new postcard..."):
-                    result = post_postcard(
-                        session_id=session_id,
-                        prompt_override=st.session_state.postcard_prompt_edit,
-                        style=st.session_state.postcard_style,
-                        mood=st.session_state.postcard_mood,
-                        color_palette=st.session_state.postcard_colors,
-                        extra_notes=st.session_state.postcard_extra,
-                    )
-                    last = st.session_state.last_response or {}
-                    artifacts = last.get("artifacts") or {}
-                    artifacts["postcard_prompt"] = result.get("prompt")
-                    artifacts["postcard_image_url"] = result.get("image_url")
-                    last["artifacts"] = artifacts
-                    st.session_state.last_response = last
-                    st.rerun()
-            except requests.RequestException as exc:
-                st.error(f"Postcard regeneration failed: {exc}")
+            st.session_state.postcard_colors = st.text_input(
+                "Color palette",
+                value=st.session_state.postcard_colors,
+                key="regen_colors",
+            )
+            st.session_state.postcard_extra = st.text_area(
+                "Extra notes",
+                value=st.session_state.postcard_extra,
+                key="regen_extra",
+            )
+            composed_prompt = (
+                f"Postcard of Singapore. Style: {st.session_state.postcard_style}. "
+                f"Mood: {st.session_state.postcard_mood}. "
+                f"Colors: {st.session_state.postcard_colors}. "
+                f"Notes: {st.session_state.postcard_extra}".strip()
+            )
+            st.session_state.postcard_prompt_edit = st.text_area(
+                "Edit prompt directly",
+                value=st.session_state.postcard_prompt_edit or composed_prompt,
+                height=100,
+                key="regen_prompt",
+            )
+            if st.button("🎨 Regenerate Postcard"):
+                try:
+                    with st.spinner("Generating new postcard..."):
+                        result = post_postcard(
+                            session_id=session_id,
+                            prompt_override=st.session_state.postcard_prompt_edit,
+                            style=st.session_state.postcard_style,
+                            mood=st.session_state.postcard_mood,
+                            color_palette=st.session_state.postcard_colors,
+                            extra_notes=st.session_state.postcard_extra,
+                        )
+                        last = st.session_state.last_response or {}
+                        artifacts = last.get("artifacts") or {}
+                        artifacts["postcard_prompt"] = result.get("prompt")
+                        artifacts["postcard_image_url"] = result.get("image_url")
+                        last["artifacts"] = artifacts
+                        st.session_state.last_response = last
+                        st.rerun()
+                except requests.RequestException as exc:
+                    st.error(f"Postcard regeneration failed: {exc}")
     else:
         # Postcard generation failed
         st.markdown("---")
