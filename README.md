@@ -1,54 +1,144 @@
-# FastAPI Chat Stub
+# Singapore Trip Planner
 
-Minimal FastAPI project with health and chat endpoints.
+An AI-powered multi-agent travel planning system that generates personalized Singapore itineraries through natural conversation.
 
-## Requirements
-- Python 3.11+
+🌐 **[Live Demo](https://singapore-trip-planner-capstone.streamlit.app/)**
 
-## Setup
+## Features
+
+- 🤖 **Multi-Agent System**: 6 specialized agents (Trip Intake, Recommender, Weather, RAG, SQL, Image Gen)
+- 💬 **Conversational Planning**: Natural multi-turn dialogue with memory
+- 🗺️ **Geographic Coherence**: Realistic itineraries respecting district clustering and travel times
+- 🌦️ **Weather-Aware**: Real-time forecasts influence indoor/outdoor activity scheduling
+- 🍜 **Food Recommendations**: Hawker center suggestions near daily activities
+- 🎨 **Personalized Postcards**: DALL-E 3 generated travel memorabilia with customizable styles
+- 📅 **Flexible Duration**: Supports 1-30+ day trips with multi-pass generation strategy
+
+## Tech Stack
+
+- **Backend**: FastAPI, Python 3.11+
+- **Frontend**: Streamlit
+- **LLM**: OpenAI GPT-4o-mini
+- **Image Gen**: DALL-E 3
+- **RAG**: ChromaDB, text-embedding-3-small
+- **Database**: SQLite (hawker centers)
+- **APIs**: WeatherAPI
+- **Deployment**: Render.com + Streamlit Cloud
+
+## Quick Start
+
+### 1. Clone & Install
+
 ```bash
-python -m venv .venv
-```
-```bash
-.venv\Scripts\activate
-```
-```bash
-pip install fastapi uvicorn openai streamlit requests
+git clone https://github.com/Veronica94/singapore-trip-planner-capstone.git
+cd singapore-trip-planner-capstone
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+pip install -r requirements.txt
 ```
 
-## Run
+### 2. Configure Environment
+
+Create `.env` file:
+
+```bash
+OPENAI_API_KEY=your_openai_api_key
+OPENAI_MODEL=gpt-4o-mini
+OPENAI_IMAGE_MODEL=dall-e-3
+WEATHER_API_KEY=your_weather_api_key
+```
+
+### 3. Run Backend
+
 ```bash
 uvicorn app.main:app --reload
 ```
 
-## Step 3: Narrative agent
-Set env vars (PowerShell example):
-```bash
-$env:OPENAI_API_KEY="your-key"
-$env:OPENAI_MODEL="gpt-4o-mini"
-```
+Backend runs at `http://localhost:8000`
 
-## Test clarifying flow
-## LLM intake flow
-- The server uses an LLM to extract the required fields and ask one clarifying question per turn.
-- When all fields are present, it asks for confirmation before generation.
-- If generation is requested with missing fields, it returns an error listing missing inputs.
-- When generating, the session log records a short "Generating campaign..." message.
+### 4. Run Frontend
 
-## Streamlit UI
 ```bash
 streamlit run streamlit_app.py
 ```
-Set the API base URL if needed:
-```bash
-$env:API_BASE_URL="http://localhost:8000"
+
+Frontend runs at `http://localhost:8501`
+
+## Project Structure
+
+```
+├── app/
+│   ├── agents/           # Specialized agents
+│   │   ├── trip_intake.py
+│   │   ├── recommender.py
+│   │   ├── weather.py
+│   │   ├── rag.py
+│   │   ├── sql_agent.py
+│   │   └── image_gen.py
+│   ├── controller.py     # Session management
+│   ├── main.py          # FastAPI app
+│   └── schemas.py       # Pydantic models
+├── data/
+│   └── docs/            # RAG knowledge base
+├── static/              # UI assets
+├── streamlit_app.py     # Frontend
+└── requirements.txt
 ```
 
-## Endpoints
-- `GET /health` -> `{"status":"ok"}`
-- `POST /chat` -> stub response
+## API Endpoints
 
-## Testing memory behavior
-- Same session remembers: call `POST /chat` twice with the same `session_id` and check `GET /debug/session/{session_id}` for accumulated messages and updated campaign state.
-- Different sessions don't leak: use two different `session_id` values and verify each debug response only contains its own messages/state.
-- Messages capped at 6: send more than 3 chat requests (user + assistant = 2 entries each) and confirm the debug response shows only the last 6 messages.
+- `GET /` - API info
+- `GET /health` - Health check
+- `POST /chat` - Conversational trip planning
+- `POST /postcard` - Generate/regenerate postcard
+- `GET /debug/session/{session_id}` - Debug session state
+
+## Documentation
+
+- **[Technical Report](TECHNICAL_REPORT.md)** - Complete implementation details
+- **[Deployment Guide](DEPLOYMENT.md)** - Production deployment instructions
+- **[API Docs](https://singapore-trip-planner-capstone.onrender.com/docs)** - Interactive API documentation
+
+## Key Implementation Highlights
+
+### Multi-Pass Generation
+For trips >7 days, uses a two-phase strategy:
+1. Week-level outline (themes and focus areas)
+2. Daily expansion (detailed activities per day)
+
+### RAG-Enhanced Planning
+Pre-loaded documents enforce:
+- Geographic clustering rules (one district per day)
+- Time-block structure (morning/midday/afternoon/evening)
+- Weather-based activity placement
+- Travel time heuristics
+
+### Fail-Soft Design
+Non-critical agents (Weather, RAG, SQL) degrade gracefully without blocking itinerary generation.
+
+## Testing
+
+Manual testing covers:
+- Trip duration variability (2-30+ days)
+- Conversational flows and confirmation workflows
+- Weather adaptation and budget constraints
+- Agent coordination and error resilience
+- UI/UX across browsers
+
+## Future Enhancements
+
+- User authentication and trip history
+- PDF/calendar export
+- Interactive map visualization
+- Multi-language support
+- Performance caching
+
+## License
+
+MIT
+
+## Contact
+
+**Author**: [Your Name]  
+**Course**: [Course Name]  
+**Repository**: https://github.com/Veronica94/singapore-trip-planner-capstone
